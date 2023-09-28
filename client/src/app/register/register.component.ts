@@ -9,7 +9,7 @@ import { ToastrService } from 'ngx-toastr';
 })
 export class RegisterComponent {
 
-  constructor(private accountService: AccountService, private toastr: ToastrService) {
+  constructor(private accountService: AccountService, private toastr:ToastrService) {
 
   }
   @Output() cancelRegister = new EventEmitter();
@@ -20,14 +20,7 @@ export class RegisterComponent {
     this.accountService.register(this.user).subscribe({
       next: response => {
         this.toastr.success('Registration complete !'),
-          this.cancel();
-      },
-      error: error => {
-        const errorarr: string[] = [error.error.errors.Username, error.error.errors.Password]
-        errorarr.forEach((_element: any) => {
-          this.toastr.error(_element);
-        });
-
+        this.cancel();
       }
     }
     )
