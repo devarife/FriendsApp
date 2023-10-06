@@ -1,6 +1,7 @@
 ﻿using API.DTOs;
 using API.Entities;
 using API.Extentions;
+using API.Helpers;
 using API.interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -22,11 +23,20 @@ public class UsersController : BaseApiController
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
+    public async Task<ActionResult<PagedList<MemberDto>>> GetUsers([FromQuery] UserParams userParams)
+    //public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
     {
         // var users = await _userRepository.GetUsersAsync();
         // var usersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
-        var users = await _userRepository.GetMembersAsync();
+        var CurrentUser = await _userRepository.GetUserByUsernameAsync(User.GetUsername());
+        userParams.CurrentUsername = CurrentUser.UserName;
+        if (string.IsNullOrEmpty(userParams.Gender))
+        {
+            userParams.Gender = CurrentUser.Gender == "male" ? "female" : "male";
+        }
+
+        var users = await _userRepository.GetMembersAsync(userParams);
+        Response.AddPaginationHeader(new PaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages));
         return Ok(users);
     }
 
@@ -109,21 +119,22 @@ public class UsersController : BaseApiController
     [HttpDelete("delete-photo/{photoID}")]
     public async Task<ActionResult> DeletePhoto(int photoID)
     {
-        var user= await _userRepository.GetUserByUsernameAsync(User.GetUsername());
-        var photo= user.Photos.FirstOrDefault(x=>x.Id==photoID);
-        if(photo==null) return NotFound();
-        if(photo.IsMain) return BadRequest("you cannot delete your main photo!");
+        var user = await _userRepository.GetUserByUsernameAsync(User.GetUsername());
+        var photo = user.Photos.FirstOrDefault(x => x.Id == photoID);
+        if (photo == null) return NotFound();
+        if (photo.IsMain) return BadRequest("you cannot delete your main photo!");
 
-        if(photo.PublicId !=null){
+        if (photo.PublicId != null)
+        {
 
             var result = await _photoService.DeletePhotoAsync(photo.PublicId);
-            if(result.Error !=null ) return BadRequest(result.Error.Message);
+            if (result.Error != null) return BadRequest(result.Error.Message);
 
         }
-        
+
         user.Photos.Remove(photo);
 
-        if(await _userRepository.SaveAllAsync()) return Ok();
+        if (await _userRepository.SaveAllAsync()) return Ok();
 
         return BadRequest("Problem deleting photo");
     }
