@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { AccountService } from '../_services/Account.service';
 import { Router } from '@angular/router';
+import { MembersService } from '../_services/members.service';
 
 @Component({
   selector: 'app-nav',
@@ -11,7 +12,7 @@ export class NavComponent implements OnInit{
   model:any={};
   usernameGet:string='';
 
-  constructor(public accountservice:AccountService,private router: Router ) {
+  constructor(public accountservice:AccountService,private router: Router) {
     
   }
   ngOnInit(): void {
@@ -22,6 +23,7 @@ export class NavComponent implements OnInit{
   login(){
     this.accountservice.login(this.model).subscribe({
       next: _ => {
+
         this.router.navigateByUrl('/members');
       }
       
